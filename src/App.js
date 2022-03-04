@@ -6,15 +6,24 @@ const apiUrl = 'http://localhost:3001'
 
 export const App = () => {
   const [bookings, setBookings] = useState([])
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     fetch(`${apiUrl}/bookings`)
       .then((response) => response.json())
       .then(setBookings)
-  }, [])
+  }, [refreshKey])
 
-  const onDrop = (files) => {
-    console.log(files)
+  const onDrop = async (files) => {
+    const formData = new FormData()
+    formData.append('bookings', files[0])
+    const uploadResponse = await fetch(`${apiUrl}/upload-bookings`, {
+      method: 'POST',
+      body: formData
+    })
+    if (uploadResponse.status) {
+      setRefreshKey(refreshKey + 1)
+    }
   }
 
   return (
