@@ -1,29 +1,83 @@
 import React, { useState, useEffect } from 'react'
 import Dropzone from 'react-dropzone'
+import styled from 'styled-components'
 import './App.css'
+import {DateTime} from "luxon";
 
 const apiUrl = 'http://localhost:3001'
 
+const Existing = "Existing"
+const ImportNoConflict = "ImportNoConflict"
+const ImportWithConflict = "ImportWithConflict"
+
+const BookingGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(24, 50px);
+  grid-template-rows: repeat(6, 100px);
+  row-gap: 10px;
+`
+
+const handleBookingBlockStatusColor = status => {
+  switch (status) {
+    case Existing:
+      return 'aquamarine'
+    case ImportNoConflict:
+      return "lightgrey"
+    case ImportWithConflict:
+      return "red"
+  }
+}
+
+const BookingBlock = styled.div`
+  border-radius: 4px;
+  background-color: ${props => handleBookingBlockStatusColor(props.status)};
+  grid-column-start: ${props => props.startTime};
+  grid-column-end: ${props => props.endTime};
+  grid-row: ${props => props.day};
+`
+
 export const App = () => {
   const [bookings, setBookings] = useState([])
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [importBookings, setImportBookings] = useState([])
+  const [refetchKey, setRefetchKey] = useState(0)
 
   useEffect(() => {
     fetch(`${apiUrl}/bookings`)
       .then((response) => response.json())
       .then(setBookings)
-  }, [refreshKey])
+  }, [refetchKey])
 
   const onDrop = async (files) => {
     const formData = new FormData()
     formData.append('bookings', files[0])
-    const uploadResponse = await fetch(`${apiUrl}/upload-bookings`, {
+    fetch(`${apiUrl}/upload-bookings`, {
       method: 'POST',
       body: formData
     })
-    if (uploadResponse.status) {
-      setRefreshKey(refreshKey + 1)
+        .then(response => response.json())
+        .then(importBookings => setImportBookings(importBookings.bookings))
+  }
+
+  const bookingBlock = (booking, key, isImport = false) => {
+    const startTime = DateTime.fromISO(booking.time)
+    const duration = booking.duration / (60 * 1000)
+    const endTime = startTime.plus({ minutes: duration});
+
+    let status = Existing
+    if (isImport) {
+      console.log(booking.conflicts)
+      status = booking && booking.conflicts.length ? ImportWithConflict : ImportNoConflict
     }
+
+    return (
+      <BookingBlock key={key} startTime={startTime.hour} endTime={endTime.hour} day={startTime.day} status={status}>
+        <p>{startTime.toLocaleString(DateTime.DATETIME_MED)}</p>
+        <p>
+          {`Duration: ${duration.toFixed(1)}`}
+        </p>
+        <p>{`UserId: ${booking.userId}`}</p>
+      </BookingBlock>
+    )
   }
 
   return (
@@ -42,19 +96,10 @@ export const App = () => {
       </div>
       <div className='App-main'>
         <p>Existing bookings:</p>
-        {bookings.map((booking, i) => {
-          const date = new Date(booking.time)
-          const duration = booking.duration / (60 * 1000)
-          return (
-            <p key={i} className='App-booking'>
-              <span className='App-booking-time'>{date.toString()}</span>
-              <span className='App-booking-duration'>
-                {duration.toFixed(1)}
-              </span>
-              <span className='App-booking-user'>{booking.userId}</span>
-            </p>
-          )
-        })}
+        <BookingGrid>
+          {bookings.map((booking, i) => bookingBlock(booking, i))}
+          {importBookings.map((booking, i) => bookingBlock(booking, i, true))}
+        </BookingGrid>
       </div>
     </div>
   )
