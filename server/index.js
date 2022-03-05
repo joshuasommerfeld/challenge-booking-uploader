@@ -1,4 +1,5 @@
 const express = require('express')
+const bodyParser = require('body-parser')
 const fileUpload = require('express-fileupload')
 const cors = require('cors')
 const fs = require('fs')
@@ -8,6 +9,7 @@ const { DateTime } = require("luxon");
 const app = express()
 app.use(cors()) // so that app can access
 app.use(fileUpload({ createParentPath: true }))
+app.use(bodyParser.json())
 
 const parseDuration = (duration) => duration * 60 * 1000
 
@@ -18,10 +20,6 @@ const parseBooking = ({ time, duration, user_id }) => ({
 })
 
 const bookings = JSON.parse(fs.readFileSync('./server/bookings.json')).map(parseBooking)
-
-app.get('/bookings', (_, res) => {
-  res.json(bookings)
-})
 
 const bookingConflictTest = (startTime, endTime) => bookingRecord => {
   const bookingStartTime = bookingRecord.time
@@ -36,7 +34,6 @@ const addConflictingBookings = (bookingRecord) => {
   const endTime = startTime.plus({ milliseconds: duration })
 
   const conflictingBookings = bookings.filter(bookingConflictTest(startTime, endTime))
-  console.log(conflictingBookings)
   return {
     ...bookingRecord,
     conflicts: conflictingBookings,
@@ -54,11 +51,20 @@ const readNewBookings = async (bookingFile) => {
   }))
 }
 
+app.get('/bookings', (_, res) => {
+  res.json(bookings)
+})
+
 app.post('/upload-bookings', async (req, res) => {
   const newBookings = await readNewBookings(req.files.bookings)
   const bookingsWithConflicts = newBookings.map(addConflictingBookings)
-  console.log(bookingsWithConflicts)
   res.send({ bookings: bookingsWithConflicts })
+})
+
+app.post('/bookings-set', (req, res) => {
+  const validBookings = req.body.filter(bookingRecord => !bookingRecord.conflicts.length)
+  bookings.push(...validBookings)
+  res.send({ message: 'successfully updated'})
 })
 
 app.listen(3001)

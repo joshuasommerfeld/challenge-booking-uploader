@@ -36,6 +36,11 @@ const BookingBlock = styled.div`
   grid-row: ${props => props.day};
 `
 
+const BookingButton = styled.button`
+  padding: 10px;
+  margin-top: 12px;
+`
+
 export const App = () => {
   const [bookings, setBookings] = useState([])
   const [importBookings, setImportBookings] = useState([])
@@ -45,6 +50,7 @@ export const App = () => {
     fetch(`${apiUrl}/bookings`)
       .then((response) => response.json())
       .then(setBookings)
+      .then(setImportBookings([]))
   }, [refetchKey])
 
   const onDrop = async (files) => {
@@ -58,6 +64,18 @@ export const App = () => {
         .then(importBookings => setImportBookings(importBookings.bookings))
   }
 
+  const onSubmit = async (bookingsToImport) => {
+    fetch(`${apiUrl}/bookings-set`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bookingsToImport)
+    })
+        .then(response => response.json())
+        .then(_ => setRefetchKey(refetchKey + 1))
+  }
+
   const bookingBlock = (booking, key, isImport = false) => {
     const startTime = DateTime.fromISO(booking.time)
     const duration = booking.duration / (60 * 1000)
@@ -65,7 +83,6 @@ export const App = () => {
 
     let status = Existing
     if (isImport) {
-      console.log(booking.conflicts)
       status = booking && booking.conflicts.length ? ImportWithConflict : ImportNoConflict
     }
 
@@ -100,6 +117,9 @@ export const App = () => {
           {bookings.map((booking, i) => bookingBlock(booking, i))}
           {importBookings.map((booking, i) => bookingBlock(booking, i, true))}
         </BookingGrid>
+        {
+          !!importBookings.length && <BookingButton onClick={() => onSubmit(importBookings)}>Upload bookings without conflicts</BookingButton>
+        }
       </div>
     </div>
   )
