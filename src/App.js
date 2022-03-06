@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import Dropzone from 'react-dropzone'
 import styled from 'styled-components'
+import { DateTime } from 'luxon';
+
 import './App.css'
-import {DateTime} from "luxon";
 
 const apiUrl = 'http://localhost:3001'
 
@@ -61,7 +62,7 @@ export const App = () => {
       body: formData
     })
         .then(response => response.json())
-        .then(importBookings => setImportBookings(importBookings.bookings))
+        .then(importBookings => setImportBookings(importBookings))
   }
 
   const onSubmit = async (bookingsToImport) => {

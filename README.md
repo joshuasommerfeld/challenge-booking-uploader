@@ -36,3 +36,13 @@ What needs to be added / changed:
 - The server needs to allow this `POST` request (`/bookings`) from app and update the booking list it has in memory (and therefore the list it returns for the existing `GET` request). There is no need to modify the server to use an actual database instead of storing the data in memory.
 
 Feel free to change any of the existing code (and add any dependencies) to achieve the required specifications / functionality. There is no need to support old browsers, assume a recent version of Firefox/Chrome. If you're having trouble starting or need help with any part, please send us an email and we'll give you a pointer.
+
+## Notes - Joshua Sommerfeld
+
+If I had more time with this project I would:
+- Add unit tests for the back-end, I seperated the express integration from the meat of the operations with testing in mind
+- Utilise an actual calendar library for the bookings display
+- Work on having the conflicting shifts show up next to the original shifts (multiple lanes) for better readability
+- Migrate all css to styled components
+- Adjust the json storage to align the `user_id` and `userId` fields
+- Adjust the way the time is stored to ISO (cleans up the date instantiation)
