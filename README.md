@@ -46,3 +46,4 @@ If I had more time with this project I would:
 - Migrate all css to styled components
 - Adjust the json storage to align the `user_id` and `userId` fields
 - Adjust the way the time is stored to ISO (cleans up the date instantiation)
+- Test push
